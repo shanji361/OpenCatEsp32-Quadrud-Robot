@@ -736,8 +736,26 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               targetFrame[i] = currentAng[i] - (gyroBalanceQ ? currentAdjust[i] : 0);
             }
             targetFrame[DOF] = '~';
+            
+            char *cmdForParsing = new char[cmdLen + 1];
+            strcpy(cmdForParsing, newCmd);
+            if (token == T_SERVO_CALIBRATE && lastToken != T_SERVO_CALIBRATE) {
+              #ifdef T_SERVO_MICROSECOND
+                                setServoP(P_HARD);
+                                workingStiffness = false;
+              #endif
+              #ifdef VOICE
+                                if (newCmdIdx == 2) {  // only deactivate the voice module via serial port
+              
+                                  char setCmd[] = "Ad~";  // turn off voice
+                                  set_voice(setCmd);
+                                }
+              #endif
+                                strcpy(newCmd, "calib");//it will override the newCmd, so we need to backup it with originalCmd
+                                loadBySkillName(newCmd);
+                              }
             char *pch;
-            pch = strtok(newCmd, " ,");
+            pch = strtok(cmdForParsing, " ,");
             nonHeadJointQ = false;
             do {  // it supports combining multiple commands at one time
               // for example: "m8 40 m8 -35 m 0 50" can be written as "m8 40 8 -35 0 50"
@@ -749,7 +767,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
-
+              // PTHL( target[0],target[1]);
               if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0
                   && target[0] < DOF) {
                 targetFrame[target[0]] = target[1];
@@ -769,21 +787,6 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                     T_SERVO_CALIBRATE);  // avoid the confirmation token blocked by the loop in autoCalibrate function.
                   autoCalibrate();
                   break;
-                }
-                if (lastToken != T_SERVO_CALIBRATE) {
-#ifdef T_SERVO_MICROSECOND
-                  setServoP(P_HARD);
-                  workingStiffness = false;
-#endif
-#ifdef VOICE
-                  if (newCmdIdx == 2) {  // only deactivate the voice module via serial port
-
-                    char setCmd[] = "Ad~";  // turn off voice
-                    set_voice(setCmd);
-                  }
-#endif
-                  strcpy(newCmd, "calib");
-                  loadBySkillName(newCmd);
                 }
                 if (inLen == 2) {
                   if (target[1] >= 1001) {  // Using 1001 for incremental calibration. 1001 is adding 1 degree, 1002 is
@@ -829,10 +832,6 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   pwm.writeAngle(actualServoIndex, duty);
 #endif
                 }
-                printToAllPorts(range2String(DOF));
-                printToAllPorts(list2String(servoCalib));
-                printToAllPorts(token);
-                // printToAllPorts(list2String(target, 2));
               } else if (token == T_INDEXED_SEQUENTIAL_ASC) {
                 transform(targetFrame, 1, 1);
                 delay(10);
@@ -911,6 +910,16 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               }
               // delay(5);
             } while (pch != NULL);
+            
+            // 释放动态分配的内存
+            delete[] cmdForParsing;
+            
+            // 对于校准命令，在循环结束后打印校准值
+            if (token == T_SERVO_CALIBRATE) {
+              printToAllPorts(range2String(DOF));
+              printToAllPorts(list2String(servoCalib));
+            }
+          
 #ifdef T_TUNER
             if (token == T_TUNER) {
               for (byte p = 0; p < sizePars; p++) {
@@ -1053,7 +1062,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                     cameraReactionQ = false;
                 }
 
-                if (cameraPrintQ) {
+                if (cameraPrintQ && cameraTaskActiveQ) {
                   printToAllPorts('=');
                   showRecognitionResult(xCoord, yCoord, width, height);
                   PTL();
@@ -1431,7 +1440,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
   }
 #endif
 #ifdef CAMERA
-  if (cameraPrintQ == 2) {
+  if (cameraPrintQ == 2 && cameraTaskActiveQ) {
     showRecognitionResult(xCoord, yCoord, width, height);
     PTL();
     FPS();
