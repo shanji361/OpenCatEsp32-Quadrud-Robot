@@ -296,6 +296,23 @@ bool lowBattery() {
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
       batteryWarningCounter = 0;
+      
+      // Reactivate PWM signals to fix servo non-responsiveness after battery power restoration
+      PTL("Reactivating servo PWM signals after power restoration...");
+#ifdef ESP_PWM
+      // Simply resend PWM signals for current positions
+      for (int c = 0; c < PWM_NUM; c++) {
+        servo[c].write(currentAng[c < 4 ? c : c + 4]);
+      }
+#else
+      // Resend PCA9685 PWM signals
+      for (int c = 0; c < PWM_NUM; c++) {
+        pwm.writeAngle(c, currentAng[c < 4 ? c : c + 4]);
+      }
+#endif
+      // Return to rest posture
+      strcpy(newCmd, "rest");
+      loadBySkillName(newCmd);
     }
   }
   return false;
