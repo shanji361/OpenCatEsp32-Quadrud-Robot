@@ -1069,8 +1069,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   // printToAllPorts(token);
                   if (cameraPrintQ == 1)
                     cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
-                  else
-                    FPS();
+                  // else
+                  //   FPS();
                 }
 
                 break;
@@ -1441,9 +1441,11 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #endif
 #ifdef CAMERA
   if (cameraPrintQ == 2 && cameraTaskActiveQ) {
-    showRecognitionResult(xCoord, yCoord, width, height);
-    PTL();
-    FPS();
+    if (xCoord != lastXcoord || yCoord != lastYcoord)
+    {
+      showRecognitionResult(xCoord, yCoord, width, height);
+      PTL();
+    }
   } else if (!cameraTaskActiveQ)
 #endif
   {

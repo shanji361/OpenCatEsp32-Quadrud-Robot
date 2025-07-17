@@ -29,20 +29,21 @@ bool detectedObjectQ = false;
 bool cameraReactionQ = true;
 bool updateCoordinateLock = false;
 int8_t cameraPrintQ = 0;
-int xCoord, yCoord, width, height; // the x y returned by the sensor
+int xCoord = -1, yCoord = -1, width = 0, height = 0; // the x y returned by the sensor
+int lastXcoord = -1, lastYcoord = -1;
 int imgRangeX = 100;               // the frame size 0~100 on X and Y direction
 int imgRangeY = 100;
 
-#ifdef BiBoard_V1_0
-#define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as
+// #ifdef BiBoard_V1_0
+// #define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as
                    // the gyroscope and EEPROM.
-#endif
+// #endif
 
-#ifdef USE_WIRE1
-#define CAMERA_WIRE Wire1
-#else
+// #ifdef USE_WIRE1
+// #define CAMERA_WIRE Wire1
+// #else
 #define CAMERA_WIRE Wire
-#endif
+// #endif
 
 #ifdef MU_CAMERA
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
@@ -213,17 +214,17 @@ bool cameraSetup() {
 }
 
 void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
-  PT(xCoord - imgRangeX / 2.0);  // get vision result: x axes value
-  PT('\t');
-  PT(yCoord - imgRangeY / 2.0);  // get vision result: y axes value
-  PT('\t');
-  PT("size = ");
-  PT(width);
+  printToAllPorts(xCoord - imgRangeX / 2.0, false);  // get vision result: x axes value
+  printToAllPorts('\t', false);
+  printToAllPorts(yCoord - imgRangeY / 2.0, false);  // get vision result: y axes value
+  printToAllPorts('\t', false);
+  printToAllPorts("size = ", false);
+  printToAllPorts(width, false);
   if (height >= 0) {
-    PT('\t');
-    PT(height);
+    printToAllPorts('\t', false);
+    printToAllPorts(height, false);
   }
-  PT('\t');
+  printToAllPorts('\t', false);
 }
 
 // #define WALK  //let the robot move its body to follow people rather than sitting at the original position
@@ -340,6 +341,11 @@ void taskReadCamera(void *par) {
       delay(1);
     cameraLockI2c = true;
 #endif
+    if (xCoord != lastXcoord || yCoord != lastYcoord)
+    {
+      lastXcoord = xCoord;
+      lastYcoord = yCoord;
+    }
 #ifdef MU_CAMERA
     if (MuQ)
       read_MuCamera();
@@ -646,6 +652,16 @@ void groveVisionSetup() {
   // CAMERA_WIRE.begin(10, 9, 400000);
   AI.begin(&CAMERA_WIRE);
 
+  // End the TASK_imu task when activating Grove Vision AI V2
+#ifdef GYRO_PIN
+  extern TaskHandle_t TASK_imu;
+  if (TASK_imu != NULL) {
+    vTaskDelete(TASK_imu);
+    TASK_imu = NULL;
+    PTLF("Terminated TASK_imu task");
+  }
+#endif
+
   uint8_t count = 0;
   bool sensorEnable = true;
   uint16_t sensorVal =
@@ -694,6 +710,10 @@ void read_GroveVision() {
       //     Serial.println(AI.boxes()[i].h);
       //   }
       // }
+      if (cameraPrintQ == 2) 
+      {
+        FPS();
+      }
     }
   }
 }

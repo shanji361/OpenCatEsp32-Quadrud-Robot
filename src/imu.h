@@ -608,8 +608,7 @@ void print6Axis() {
 }
 
 TaskHandle_t TASK_imu = NULL;
-TaskHandle_t taskCalibrateImuUsingCore0_handle =
-    NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 0 FROM Core 1
+TaskHandle_t taskCalibrateImuUsingCore0_handle = NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 0 FROM Core 1
 
 bool readIMU() {
   bool updated = false;
