@@ -608,7 +608,14 @@ void print6Axis() {
 }
 
 TaskHandle_t TASK_imu = NULL;
-TaskHandle_t taskCalibrateImuUsingCore0_handle = NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 0 FROM Core 1
+
+// IMU任务参数结构体
+typedef struct {
+  bool running;  // 运行标志
+} ImuTaskParams_t;
+
+ImuTaskParams_t imuTaskParams;  // IMU任务参数实例
+TaskHandle_t taskCalibrateImuUsingCore0_handle = NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 1 FROM Core 1
 
 bool readIMU() {
   bool updated = false;
@@ -719,7 +726,9 @@ void getImuException() {
 
 long imuTime = 0;
 void taskIMU(void *parameter) {
-  while (true) {
+  ImuTaskParams_t* params = (ImuTaskParams_t*)parameter;
+  
+  while (params->running) {
     if (millis() - imuTime > 5) {
       imuUpdated = readIMU();
       getImuException();
@@ -762,10 +771,14 @@ void imuSetup() {
   if (calibrateQ)
     beep(18, 50, 50, 6);
   previous_ypr[0] = ypr[0];
+  
+  // 初始化IMU任务参数
+  imuTaskParams.running = true;
+  
   xTaskCreatePinnedToCore(taskIMU,  // task function
                           "TaskIMU",  // name
                           9000,  // task stack size​​: 8700 determined by uxTaskGetStackHighWaterMark()
-                          NULL,  // parameters
+                          &imuTaskParams,  // parameters
                           1,  // priority
                           &TASK_imu,  // handle
                           0);  // core

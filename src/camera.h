@@ -655,10 +655,15 @@ void groveVisionSetup() {
   // End the TASK_imu task when activating Grove Vision AI V2
 #ifdef GYRO_PIN
   extern TaskHandle_t TASK_imu;
+  extern ImuTaskParams_t imuTaskParams;
   if (TASK_imu != NULL) {
-    vTaskDelete(TASK_imu);
+    imuTaskParams.running = false;  // 直接设置参数结构体中的标志来优雅地结束IMU任务
+    // 等待任务自然结束
+    while (eTaskGetState(TASK_imu) != eDeleted) {
+      delay(1);
+    }
     TASK_imu = NULL;
-    PTLF("Terminated TASK_imu task");
+    PTLF("Terminated TASK_imu task gracefully");
   }
 #endif
 
