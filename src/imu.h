@@ -509,7 +509,7 @@ void print6Axis() {
     sprintf(buffer, "MPU:ax=%.2f,ay=%.2f,az=%.2f,yaw=%.2f,pitch=%.2f,roll=%.2f\n",                                  // 7x6 = 42
             mpu.a_real[0], mpu.a_real[1], mpu.a_real[2], mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);  //, aaWorld.z);
 #else
-    sprintf(buffer, "MPU:yaw=%.2f,pitch=%.2f,roll=%.2f\n",, mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
+    sprintf(buffer, "MPU:yaw=%.2f,pitch=%.2f,roll=%.2f\n", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
 #endif
     printToAllPorts(buffer, 0);
   }
