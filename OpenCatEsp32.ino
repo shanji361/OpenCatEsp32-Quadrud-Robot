@@ -111,3 +111,38 @@ void quickDemo()
   prevReading = currentReading;
 }
 #endif
+
+
+float getYaw() {
+  readEnvironment();           // updates global ypr[0]
+  return fmod((ypr[0] + 360.0), 360.0); // Normalize yaw to [0, 360)
+}
+
+float angleDiff(float a, float b) {
+  return ((a - b + 180.0f) - floor((a - b + 180.0f) / 360.0f) * 360.0f) - 180.0f;
+}
+
+void turnRight90DegreesFirmware() {
+  PTL("Starting 90-degree right turn...");
+
+  float initialYaw = getYaw();
+  float targetYaw = fmod(initialYaw + 90.0, 360.0);
+  float currentYaw = initialYaw;
+
+  PT("Initial Yaw: "); PTL(initialYaw);
+  PT("Target Yaw: "); PTL(targetYaw);
+
+  // Begin turning
+  tQueue->addTask(T_GYRO_BALANCE); // Disable gait stabilization temporarily if needed
+  delay(200);
+
+  while (abs(angleDiff(currentYaw, targetYaw)) > 5.0) {
+    tQueue->addTask(T_GAIT, "vtR"); // vtR = turn right in place
+    delay(600);                     // Let it walk a bit
+    currentYaw = getYaw();
+    PT("Current Yaw: "); PTL(currentYaw);
+  }
+
+  tQueue->addTask(T_SKILL, "balance"); // Return to balanced stance
+  PTL("Turn complete.");
+}
