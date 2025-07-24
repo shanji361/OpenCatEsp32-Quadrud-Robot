@@ -114,8 +114,10 @@ void quickDemo()
 
 
 float getYaw() {
-  readEnvironment();           // updates global ypr[0]
-  return fmod((ypr[0] + 360.0), 360.0); // Normalize yaw to [0, 360)
+  readEnvironment();
+  if (mpuQ) return fmod((mpu.ypr[0] + 360.0), 360.0);
+  if (icmQ) return fmod((icm.ypr[0] + 360.0), 360.0);
+  return 0;
 }
 
 float angleDiff(float a, float b) {
