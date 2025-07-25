@@ -29,61 +29,120 @@
 // #define ROBOT_ARM                 // for attaching head clip arm
 #include "src/OpenCat.h"
 
-void turnLeft90() {
-  float targetYaw;
-  float startYaw;
+// State variables for non-blocking turn
+bool turningLeft = false;
+bool turningRight = false;
+float turnStartYaw = 0;
+int turnAttempts = 0;
+unsigned long lastTurnTime = 0;
+
+void startTurnLeft90() {
+  if (!turningLeft && !turningRight) {
+    turningLeft = true;
+    turnAttempts = 0;
+    lastTurnTime = millis();
+    
 #ifdef IMU_ICM42670
-  if (icmQ) {
-    startYaw = icm.ypr[0];
-  }
-#endif
-#ifdef IMU_MPU6050
-  if (mpuQ) {
-    startYaw = mpu.ypr[0];
-  }
-#endif
-
-  targetYaw = startYaw - 90.0;
-  if (targetYaw < -180.0) targetYaw += 360.0;  // normalize
-
-  PTL("Turning Left 90 Degrees...");
-  PT("Start Yaw: "); PTL(startYaw);
-  PT("Target Yaw: "); PTL(targetYaw);
-
-  int attempts = 0;
-  const int maxAttempts = 10;
-  const int interval = 700;  // time in ms, tweak as needed
-
-  while (attempts++ < maxAttempts) {
-    tQueue->addTask('k', "vtL", interval);  // left turn
-    while (!tQueue->cleared()) {
-      tQueue->popTask();  // complete task
-      delay(50);  // allow task to execute and yaw to update
+    if (icmQ) {
+      turnStartYaw = icm.ypr[0];
     }
-
-    readEnvironment();  // update IMU
-    float currentYaw = 0.0;
-#ifdef IMU_ICM42670
-    currentYaw = icm.ypr[0];
 #endif
 #ifdef IMU_MPU6050
-    currentYaw = mpu.ypr[0];
+    if (mpuQ) {
+      turnStartYaw = mpu.ypr[0];
+    }
 #endif
 
-    float yawDiff = startYaw - currentYaw;
+    PTL("Starting Left Turn 90 Degrees...");
+    PT("Start Yaw: "); PTL(turnStartYaw);
+    
+    // Add the first turn task
+    tQueue->addTask('k', "vtL", 700);
+  }
+}
+
+void startTurnRight90() {
+  if (!turningLeft && !turningRight) {
+    turningRight = true;
+    turnAttempts = 0;
+    lastTurnTime = millis();
+    
+#ifdef IMU_ICM42670
+    if (icmQ) {
+      turnStartYaw = icm.ypr[0];
+    }
+#endif
+#ifdef IMU_MPU6050
+    if (mpuQ) {
+      turnStartYaw = mpu.ypr[0];
+    }
+#endif
+
+    PTL("Starting Right Turn 90 Degrees...");
+    PT("Start Yaw: "); PTL(turnStartYaw);
+    
+    // Add the first turn task
+    tQueue->addTask('k', "vtR", 700);
+  }
+}
+
+void checkTurnProgress() {
+  if (!turningLeft && !turningRight) return;
+  
+  // Check progress every 800ms (700ms task + 100ms buffer)
+  if (millis() - lastTurnTime > 800) {
+    float currentYaw = 0.0;
+    
+#ifdef IMU_ICM42670
+    if (icmQ) {
+      currentYaw = icm.ypr[0];
+    }
+#endif
+#ifdef IMU_MPU6050
+    if (mpuQ) {
+      currentYaw = mpu.ypr[0];
+    }
+#endif
+
+    float yawDiff;
+    if (turningLeft) {
+      yawDiff = turnStartYaw - currentYaw;  // Left turn: positive difference
+    } else {
+      yawDiff = currentYaw - turnStartYaw;  // Right turn: positive difference
+    }
+    
     if (yawDiff < -180.0) yawDiff += 360.0;
     if (yawDiff > 180.0) yawDiff -= 360.0;
 
     PT("Current Yaw: "); PTL(currentYaw);
-    PT("Diff: "); PTL(yawDiff);
+    PT("Yaw Diff: "); PTL(yawDiff);
+    PT("Attempt: "); PTL(turnAttempts + 1);
 
     if (abs(yawDiff) >= 85.0) {
-      PTL("Finished turning!");
-      break;
+      if (turningLeft) {
+        PTL("Left turn complete!");
+      } else {
+        PTL("Right turn complete!");
+      }
+      turningLeft = false;
+      turningRight = false;
+      tQueue->addTask('k', "balance", 500);
+    } else if (turnAttempts < 10) {
+      // Continue turning
+      turnAttempts++;
+      if (turningLeft) {
+        tQueue->addTask('k', "vtL", 700);
+      } else {
+        tQueue->addTask('k', "vtR", 700);
+      }
+      lastTurnTime = millis();
+    } else {
+      PTL("Turn failed - max attempts reached");
+      turningLeft = false;
+      turningRight = false;
+      tQueue->addTask('k', "balance", 500);
     }
   }
-
-  tQueue->addTask('k', "balance", 500);  // optional: return to neutral
 }
 
 void setup() {
@@ -110,12 +169,19 @@ void loop() {
   readEnvironment();  // update the gyro data
   //  //— special behaviors based on sensor events
   dealWithExceptions();  // low battery, fall over, lifted, etc.
+  
+  // Check turn progress every loop iteration
+  checkTurnProgress();
+  
   if (!tQueue->cleared()) {
     tQueue->popTask();
   } else {
     readSignal();
-    if (token == 'g') {
-      turnLeft90();
+    if (token == 'L') {
+      startTurnLeft90();  // Left turn
+    }
+    if (token == 'R') {
+      startTurnRight90(); // Right turn
     }
     
 #ifdef QUICK_DEMO
