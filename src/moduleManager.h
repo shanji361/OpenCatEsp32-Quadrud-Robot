@@ -400,10 +400,6 @@ void readSignal() {
   read_infrared();  //  newCmdIdx = 1
 #endif
   read_serial();  //  newCmdIdx = 2
-//   if (strcmp(newCmd, "turn90R") == 0) {
-//    turnRight90DegreesFirmware();
-//    newCmdIdx = 0;  // reset command index to mark the command as handled
-//  }
 #ifdef BT_BLE
   detectBle();  //  newCmdIdx = 3;
   readBle();
@@ -442,7 +438,10 @@ void readSignal() {
 #endif
 #ifdef GESTURE
     if (moduleActivatedQ[indexOfModule(EXTENSION_GESTURE)])
-      read_gesture();
+    {
+      gestureGetValue = read_gesture();
+      // PTHL("gestureValue02:", gestureGetValue);
+    }
 #endif
 #ifdef PIR
     if (moduleActivatedQ[indexOfModule(EXTENSION_PIR)])
