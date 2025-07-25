@@ -62,12 +62,12 @@ void turnLeft90() {
     }
 
     readEnvironment();  // update IMU
-
+    float currentYaw = 0.0;
 #ifdef IMU_ICM42670
-    float currentYaw = icm.ypr[0];
+    currentYaw = icm.ypr[0];
 #endif
 #ifdef IMU_MPU6050
-    float currentYaw = mpu.ypr[0];
+    currentYaw = mpu.ypr[0];
 #endif
 
     float yawDiff = startYaw - currentYaw;
