@@ -1316,14 +1316,14 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           }
           break;
         }
-      case T_TURN_LEFT:  // Add this entire case
+      case T_TURN_LEFT_90:  // Add this entire case
         {
           PTL("Custom left turn 90 degrees");
           startTurnLeft90();
           break;
         }
         
-      case T_TURN_RIGHT:  // Add this entire case
+      case T_TURN_RIGHT_90:  // Add this entire case
         {
           PTL("Custom right turn 90 degrees");
           startTurnRight90();
