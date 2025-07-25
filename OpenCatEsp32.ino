@@ -177,12 +177,7 @@ void loop() {
     tQueue->popTask();
   } else {
     readSignal();
-    if (token == 'L') {
-      startTurnLeft90();  // Left turn
-    }
-    if (token == 'R') {
-      startTurnRight90(); // Right turn
-    }
+ 
     
 #ifdef QUICK_DEMO
     if (moduleList[moduleIndex] == EXTENSION_QUICK_DEMO)
