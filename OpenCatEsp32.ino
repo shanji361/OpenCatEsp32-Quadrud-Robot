@@ -62,6 +62,11 @@ void loop()
   else
   {
     readSignal();
+    if (token == 'g') {
+      turnLeft90();
+    }
+
+    
 #ifdef QUICK_DEMO
     if (moduleList[moduleIndex] == EXTENSION_QUICK_DEMO)
       quickDemo();
