@@ -157,7 +157,8 @@ String uniqueName = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 #define IMU_ICM42670
-
+#define T_TURN_LEFT 'L'
+#define T_TURN_RIGHT 'R'
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
 #ifdef BITTLE
