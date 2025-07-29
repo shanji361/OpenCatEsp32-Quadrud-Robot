@@ -169,6 +169,7 @@ void loop() {
   readEnvironment();  // update the gyro data
   //  //— special behaviors based on sensor events
   dealWithExceptions();  // low battery, fall over, lifted, etc.
+  print6Axis();
   
   // Check turn progress every loop iteration
   checkTurnProgress();
@@ -177,7 +178,12 @@ void loop() {
     tQueue->popTask();
   } else {
     readSignal();
- 
+    if (token == 'E') {
+      startTurnLeft90();  // Left turn
+    }
+    if (token == 'e') {
+      startTurnRight90(); // Right turn
+    }
     
 #ifdef QUICK_DEMO
     if (moduleList[moduleIndex] == EXTENSION_QUICK_DEMO)
