@@ -1316,19 +1316,6 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           }
           break;
         }
-      case T_TURN_LEFT_90:  // Add this entire case
-        {
-          PTL("Custom left turn 90 degrees");
-          startTurnLeft90();
-          break;
-        }
-        
-      case T_TURN_RIGHT_90:  // Add this entire case
-        {
-          PTL("Custom right turn 90 degrees");
-          startTurnRight90();
-          break;
-        }
       case T_TASK_QUEUE:
         {
           tQueue->createTask();  // use 'q' to start the sequence.
