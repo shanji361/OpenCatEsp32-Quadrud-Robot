@@ -118,7 +118,7 @@ void checkTurnProgress() {
     PT("Yaw Diff: "); PTL(yawDiff);
     PT("Attempt: "); PTL(turnAttempts + 1);
 
-    if (abs(yawDiff) >= 85.0) {
+    if (abs(yawDiff) >= 78.0) {
       if (turningLeft) {
         PTL("Left turn complete!");
       } else {
@@ -131,9 +131,9 @@ void checkTurnProgress() {
       // Continue turning
       turnAttempts++;
       if (turningLeft) {
-        tQueue->addTask('k', "vtL", 700);
+        tQueue->addTask('k', "vtL", 400);
       } else {
-        tQueue->addTask('k', "vtR", 700);
+        tQueue->addTask('k', "vtR", 400);
       }
       lastTurnTime = millis();
     } else {
